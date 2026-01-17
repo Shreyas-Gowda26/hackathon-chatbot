@@ -1,0 +1,373 @@
+{
+    "_id": "696923eddf7789e3e27e7a1c",
+    "created_at": "2026-01-15T17:29:17.453000Z",
+    "updated_at": "2026-01-15T18:15:35.586000Z",
+    "name": "Code Titans(Shreyas)",
+    "tagline": "Design tests that matter.",
+    "about": "Kunal Shah is a mobile app developer with experience in Flutter, Android, and iOS development. He enjoys helping students design smooth user experiences and turn ideas into functional mobile applications.",
+    "type": "hackathon",
+    "industry": "technology",
+    "min_team_size": 1,
+    "max_team_size": 1,
+    "mode": "online",
+    "location": null,
+    "visibility": "public",
+    "start_datetime": "2026-01-15T17:28:00Z",
+    "end_datetime": "2026-01-31T17:28:00Z",
+    "slug": "code-titans-shreyas",
+    "created_by": "l9yziO6elwUcU2J0tPR598AqHuG3",
+    "organizer_name": "Shreyas Inc",
+    "org_id": "695fab8bd240c29cb2619f0d",
+    "tenant_id": "global",
+    "eligibility": {
+        "profile_type": "any",
+        "gender": "any",
+        "professional_types": [],
+        "student_year_of_graduation_min": null,
+        "student_year_of_graduation_max": null,
+        "student_year_of_study_min": null,
+        "student_year_of_study_max": null,
+        "details": ""
+    },
+    "tags": null,
+    "review_status": "approved_|_l9yziO6elwUcU2J0tPR598AqHuG3_|_Approved by admin",
+    "status": "published",
+    "registration_questions": [
+        {
+            "id": "1768499771538",
+            "type": "text",
+            "label": "Whats your name?",
+            "required": true,
+            "options": [],
+            "media": null,
+            "order": 0
+        }
+    ],
+    "branding": {
+        "cover_photo": null,
+        "logo": null,
+        "email_banner_image": "https://hcplatformstaging.blob.core.windows.net/event-assets/hackathons/696923eddf7789e3e27e7a1c/upload_1768499092703_q137xw.png",
+        "primary_color": null,
+        "secondary_color": null
+    },
+    "links": {
+        "website": "https://www.google.com",
+        "twitter": "https://x.com/shreyasg2526",
+        "linkedin": null,
+        "discord": "https://www.google.com",
+        "slack": null,
+        "telegram": null,
+        "facebook": null,
+        "instagram": null
+    },
+    "partners": [],
+    "themes": [
+        {
+            "id": "ai-machine-learning",
+            "name": "Ai Machine Learning",
+            "description": "Ai Machine Learning theme",
+            "problem_statements": [
+                {
+                    "id": "ai-machine-learning_problem_0",
+                    "name": "AI-Powered Smart Assistant",
+                    "description": "Build an intelligent assistant that can help users with daily tasks using AI and machine learning.\n\n**Key Features:**\n- Natural language processing\n- Task automation\n- Personalized recommendations\n- Voice interaction capabilities",
+                    "file": null
+                }
+            ]
+        },
+        {
+            "id": "fintech",
+            "name": "Fintech",
+            "description": "Fintech theme",
+            "problem_statements": [
+                {
+                    "id": "fintech_problem_0",
+                    "name": "Digital Payment Solution",
+                    "description": "Create a secure and user-friendly digital payment platform for seamless financial transactions.\n\n**Key Features:**\n- Secure payment processing\n- Multi-platform support\n- Real-time transaction tracking\n- Financial analytics dashboard",
+                    "file": null
+                }
+            ]
+        },
+        {
+            "id": "healthtech",
+            "name": "Healthtech",
+            "description": "Healthtech theme",
+            "problem_statements": [
+                {
+                    "id": "healthtech_problem_0",
+                    "name": "Health Monitoring System",
+                    "description": "Develop a comprehensive health monitoring solution for tracking vital signs and wellness metrics.\n\n**Key Features:**\n- Real-time health data tracking\n- AI-powered health insights\n- Integration with wearable devices\n- Emergency alert system",
+                    "file": null
+                }
+            ]
+        },
+        {
+            "id": "sustainability",
+            "name": "Sustainability",
+            "description": "Sustainability theme",
+            "problem_statements": [
+                {
+                    "id": "sustainability_problem_0",
+                    "name": "Green Energy Management",
+                    "description": "Create a solution for monitoring and optimizing renewable energy consumption and production.\n\n**Key Features:**\n- Energy consumption tracking\n- Renewable energy optimization\n- Carbon footprint monitoring\n- Smart grid integration",
+                    "file": null
+                }
+            ]
+        }
+    ],
+    "phases": [
+        {
+            "_id": "6944045234989441b903689a",
+            "created_at": "2026-01-15T17:29:35.915000Z",
+            "updated_at": "2026-01-15T18:19:57.908000Z",
+            "name": "Registration",
+            "description": "Hackathon registration period",
+            "start_datetime": "2026-01-15T17:29:00Z",
+            "end_datetime": "2026-01-22T17:50:00Z",
+            "type": "registration",
+            "submission_questions": null,
+            "is_offline": false,
+            "allow_multiple_submissions": false,
+            "is_elimination_round": false,
+            "evaluator": "organizer",
+            "evaluation_metrics": null,
+            "show_in_timeline": true,
+            "is_locked": null,
+            "is_open_override": null
+        },
+        {
+            "_id": "69692458174b2b00ae62ba35",
+            "created_at": "2026-01-15T17:31:04.387000Z",
+            "updated_at": "2026-01-15T19:01:12.120000Z",
+            "name": "Idea Submission",
+            "description": "This is the idea submission phase!",
+            "start_datetime": "2026-01-15T17:30:00Z",
+            "end_datetime": "2026-01-31T17:30:00Z",
+            "type": "submission",
+            "submission_questions": [
+                {
+                    "id": "question_1768498267269",
+                    "type": "file",
+                    "label": "Upload the file here!",
+                    "required": true,
+                    "options": []
+                }
+            ],
+            "is_offline": false,
+            "allow_multiple_submissions": false,
+            "is_elimination_round": true,
+            "evaluator": "judge",
+            "evaluation_metrics": [
+                {
+                    "theme_id": "ai-machine-learning",
+                    "problem_statement_id": "ai-machine-learning_problem_0",
+                    "metrics": {
+                        "Research Work": 20,
+                        "UI/UX Design": 15,
+                        "Technical Implementation": 25,
+                        "Innovation & Creativity": 20,
+                        "Presentation & Demo": 20
+                    }
+                },
+                {
+                    "theme_id": "fintech",
+                    "problem_statement_id": "fintech_problem_0",
+                    "metrics": {
+                        "Research Work": 20,
+                        "UI/UX Design": 15,
+                        "Technical Implementation": 25,
+                        "Innovation & Creativity": 20,
+                        "Presentation & Demo": 20
+                    }
+                },
+                {
+                    "theme_id": "healthtech",
+                    "problem_statement_id": "healthtech_problem_0",
+                    "metrics": {
+                        "Research Work": 20,
+                        "UI/UX Design": 15,
+                        "Technical Implementation": 25,
+                        "Innovation & Creativity": 20,
+                        "Presentation & Demo": 20
+                    }
+                },
+                {
+                    "theme_id": "sustainability",
+                    "problem_statement_id": "sustainability_problem_0",
+                    "metrics": {
+                        "Research Work": 20,
+                        "UI/UX Design": 15,
+                        "Technical Implementation": 25,
+                        "Innovation & Creativity": 20,
+                        "Presentation & Demo": 20
+                    }
+                }
+            ],
+            "show_in_timeline": true,
+            "is_locked": null,
+            "is_open_override": null
+        },
+        {
+            "_id": "696924f5174b2b00ae62ba36",
+            "created_at": "2026-01-15T17:33:41.997000Z",
+            "updated_at": "2026-01-15T17:34:23.836000Z",
+            "name": "Prototype Submission",
+            "description": "This is the prototype submission phase!",
+            "start_datetime": "2026-01-15T17:33:00Z",
+            "end_datetime": "2026-01-31T17:33:00Z",
+            "type": "submission",
+            "submission_questions": [
+                {
+                    "id": "question_1768498436285",
+                    "type": "url",
+                    "label": "Upload the valid URL here",
+                    "required": true,
+                    "options": []
+                }
+            ],
+            "is_offline": false,
+            "allow_multiple_submissions": false,
+            "is_elimination_round": true,
+            "evaluator": "judge",
+            "evaluation_metrics": [
+                {
+                    "theme_id": "ai-machine-learning",
+                    "problem_statement_id": "1768498161121",
+                    "metrics": {
+                        "Research Work": 20,
+                        "UI/UX Design": 15,
+                        "Technical Implementation": 25,
+                        "Innovation & Creativity": 20,
+                        "Presentation & Demo": 20
+                    }
+                },
+                {
+                    "theme_id": "fintech",
+                    "problem_statement_id": "1768498162502",
+                    "metrics": {
+                        "Research Work": 20,
+                        "UI/UX Design": 15,
+                        "Technical Implementation": 25,
+                        "Innovation & Creativity": 20,
+                        "Presentation & Demo": 20
+                    }
+                },
+                {
+                    "theme_id": "healthtech",
+                    "problem_statement_id": "1768498164252",
+                    "metrics": {
+                        "Research Work": 20,
+                        "UI/UX Design": 15,
+                        "Technical Implementation": 25,
+                        "Innovation & Creativity": 20,
+                        "Presentation & Demo": 20
+                    }
+                },
+                {
+                    "theme_id": "sustainability",
+                    "problem_statement_id": "1768498166201",
+                    "metrics": {
+                        "Research Work": 20,
+                        "UI/UX Design": 15,
+                        "Technical Implementation": 25,
+                        "Innovation & Creativity": 20,
+                        "Presentation & Demo": 20
+                    }
+                }
+            ],
+            "show_in_timeline": true,
+            "is_locked": null,
+            "is_open_override": null
+        },
+        {
+            "_id": "69692d60174b2b00ae62ba3b",
+            "created_at": "2026-01-15T18:09:36.421000Z",
+            "updated_at": "2026-01-15T18:12:18.424000Z",
+            "name": "Final Submission",
+            "description": "This is the Final Submission phase",
+            "start_datetime": "2026-01-15T18:09:00Z",
+            "end_datetime": "2026-01-31T18:09:00Z",
+            "type": "submission",
+            "submission_questions": [
+                {
+                    "id": "question_1768500604556",
+                    "type": "file",
+                    "label": "Upload the file",
+                    "required": false,
+                    "options": []
+                }
+            ],
+            "is_offline": false,
+            "allow_multiple_submissions": false,
+            "is_elimination_round": true,
+            "evaluator": "organizer",
+            "evaluation_metrics": [],
+            "show_in_timeline": true,
+            "is_locked": null,
+            "is_open_override": null
+        },
+        {
+            "_id": "69693e78174b2b00ae62ba43",
+            "created_at": "2026-01-15T19:22:32.084000Z",
+            "updated_at": "2026-01-15T19:22:32.084000Z",
+            "name": "Grand Final",
+            "description": "",
+            "start_datetime": "2026-01-15T19:22:00Z",
+            "end_datetime": "2026-01-30T19:22:00Z",
+            "type": "submission",
+            "submission_questions": null,
+            "is_offline": false,
+            "allow_multiple_submissions": false,
+            "is_elimination_round": false,
+            "evaluator": "organizer",
+            "evaluation_metrics": null,
+            "show_in_timeline": true,
+            "is_locked": null,
+            "is_open_override": null
+        },
+        {
+            "_id": "69693e9cdf7789e3e27e7a23",
+            "created_at": "2026-01-15T19:23:08.757000Z",
+            "updated_at": "2026-01-15T19:23:08.757000Z",
+            "name": "Super Final",
+            "description": "",
+            "start_datetime": "2026-01-15T19:23:00Z",
+            "end_datetime": "2026-01-30T19:23:00Z",
+            "type": "submission",
+            "submission_questions": null,
+            "is_offline": false,
+            "allow_multiple_submissions": false,
+            "is_elimination_round": false,
+            "evaluator": "organizer",
+            "evaluation_metrics": null,
+            "show_in_timeline": true,
+            "is_locked": null,
+            "is_open_override": null
+        }
+    ],
+    "events": [
+        {
+            "id": "1768499612472",
+            "datetime": "2026-01-22T17:53:00Z",
+            "title": "ABCD",
+            "description": "Kunal Shah is a mobile app developer with experience in Flutter, Android, and iOS development. He enjoys helping students design smooth user experiences and turn ideas into functional mobile applications.",
+            "type": "event"
+        }
+    ],
+    "prizes": [],
+    "judges": [],
+    "mentors": [],
+    "faq": [],
+    "contact_details": [],
+    "announcements": null,
+    "rules": null,
+    "resources": "## Darshan\n- [PPT Template](https://example.com/template.pptx)\n- [PPT Template 2](https://example.com/template.pptx)\n- [PPT Template 3](https://example.com/template.pptx)\n\n## Chandan\n- [PPT Template 4](https://example.com/template.pptx)\n- [PPT Template 5](https://example.com/template.pptx)",
+    "total_participants": 4,
+    "total_views": 12,
+    "is_registration_open": true,
+    "is_user_registered": false,
+    "user_registration_id": null,
+    "is_user_eligible": true,
+    "is_winners_announced": null,
+    "show_winner_submissions": false
+}

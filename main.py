@@ -86,9 +86,43 @@ Your goal is to provide reliable, official answers that render beautifully in ma
 def extract_relevant_sections(hackathon_data: Dict[str, Any], question: str) -> str:
     """Extract relevant sections from hackathon data based on question keywords.
     Returns comprehensive context to ensure AI has enough information."""
+    from datetime import datetime, timezone
+    
     question_lower = question.lower()
     sections = []
     matched_categories = []
+    
+    # Helper function to check if registration is actually open
+    def is_registration_currently_open():
+        try:
+            reg_phase = next((p for p in hackathon_data.get('phases', []) if p.get('type') == 'registration'), None)
+            if not reg_phase:
+                return hackathon_data.get('is_registration_open', False)
+            
+            now = datetime.now(timezone.utc)
+            start = datetime.fromisoformat(reg_phase.get('start_datetime', '').replace('Z', '+00:00'))
+            end = datetime.fromisoformat(reg_phase.get('end_datetime', '').replace('Z', '+00:00'))
+            
+            return start <= now <= end
+        except:
+            # Fallback to database value if date parsing fails
+            return hackathon_data.get('is_registration_open', False)
+    
+    # Helper function to get hackathon status
+    def get_hackathon_status():
+        try:
+            now = datetime.now(timezone.utc)
+            start = datetime.fromisoformat(hackathon_data.get('start_datetime', '').replace('Z', '+00:00'))
+            end = datetime.fromisoformat(hackathon_data.get('end_datetime', '').replace('Z', '+00:00'))
+            
+            if now < start:
+                return "upcoming"
+            elif now > end:
+                return "ended"
+            else:
+                return "ongoing"
+        except:
+            return "unknown"
     
     # Registration-related keywords (expanded)
     registration_keywords = ['register', 'registration', 'sign up', 'join', 'participate', 'enroll', 'apply']
@@ -98,7 +132,10 @@ def extract_relevant_sections(hackathon_data: Dict[str, Any], question: str) -> 
         if reg_phase:
             sections.append("=== REGISTRATION INFORMATION ===")
             sections.append(f"Registration Period: {reg_phase.get('start_datetime')} to {reg_phase.get('end_datetime')}")
-            sections.append(f"Registration Status: {'Open' if hackathon_data.get('is_registration_open') else 'Closed'}")
+            
+            # Real-time status
+            is_open = is_registration_currently_open()
+            sections.append(f"Current Status: {'✅ OPEN - You can register now!' if is_open else '❌ CLOSED - Registration has ended'}")
             sections.append(f"Description: {reg_phase.get('description', 'Registration period for the hackathon')}")
             
             # Add registration questions if available
@@ -372,17 +409,89 @@ def extract_relevant_sections(hackathon_data: Dict[str, Any], question: str) -> 
         else:
             sections.append("Venue details will be announced soon.")
     
+    # Announcements keywords (NEW!)
+    announcement_keywords = ['announcement', 'announcements', 'update', 'updates', 'news', 'latest']
+    if any(word in question_lower for word in announcement_keywords):
+        matched_categories.append('announcements')
+        announcements = hackathon_data.get('announcements')
+        sections.append("\n=== ANNOUNCEMENTS ===")
+        if announcements:
+            sections.append(announcements)
+        else:
+            sections.append("No announcements at this time. Check back later for updates.")
+    
+    # Statistics keywords (NEW!)
+    stats_keywords = ['how many', 'participants', 'registered', 'views', 'popular']
+    if any(word in question_lower for word in stats_keywords):
+        matched_categories.append('stats')
+        sections.append("\n=== PARTICIPATION STATISTICS ===")
+        total_participants = hackathon_data.get('total_participants', 0)
+        total_views = hackathon_data.get('total_views', 0)
+        sections.append(f"Total Registered Participants: {total_participants}")
+        sections.append(f"Total Page Views: {total_views}")
+    
+    # Tags/Categories keywords (NEW!)
+    tag_keywords = ['tag', 'tags', 'category', 'categories', 'industry', 'type']
+    if any(word in question_lower for word in tag_keywords):
+        matched_categories.append('tags')
+        tags = hackathon_data.get('tags', [])
+        industry = hackathon_data.get('industry')
+        hackathon_type = hackathon_data.get('type')
+        
+        sections.append("\n=== HACKATHON CATEGORY ===")
+        if hackathon_type:
+            sections.append(f"Type: {hackathon_type.capitalize()}")
+        if industry:
+            sections.append(f"Industry: {industry.capitalize()}")
+        if tags and len(tags) > 0:
+            sections.append(f"Tags: {', '.join(tags)}")
+    
+    # Winners keywords (NEW!)
+    winner_keywords = ['winner', 'winners', 'result', 'results', 'who won']
+    if any(word in question_lower for word in winner_keywords):
+        matched_categories.append('winners')
+        sections.append("\n=== WINNERS ===")
+        is_announced = hackathon_data.get('is_winners_announced', False)
+        if is_announced:
+            sections.append("Winners have been announced!")
+            # You can add more winner details here if available in your data
+        else:
+            sections.append("Winners will be announced after the hackathon concludes.")
+    
+    # Contact details (separate from links) (NEW!)
+    if any(word in question_lower for word in ['email', 'phone', 'call', 'contact number']):
+        matched_categories.append('contact_details')
+        contact_details = hackathon_data.get('contact_details', [])
+        if contact_details and len(contact_details) > 0:
+            sections.append("\n=== CONTACT DETAILS ===")
+            for contact in contact_details:
+                if isinstance(contact, dict):
+                    name = contact.get('name', 'Contact')
+                    email = contact.get('email', '')
+                    phone = contact.get('phone', '')
+                    sections.append(f"\n• {name}")
+                    if email:
+                        sections.append(f"  Email: {email}")
+                    if phone:
+                        sections.append(f"  Phone: {phone}")
+                elif isinstance(contact, str):
+                    sections.append(f"• {contact}")
+    
     # If no specific category matched OR if question is general, provide overview
-    if not matched_categories or any(word in question_lower for word in ['about', 'overview', 'general', 'info', 'tell me', 'what is']):
+    if not matched_categories or any(word in question_lower for word in ['about', 'overview', 'general', 'info', 'tell me', 'what is', 'status', 'when']):
+        hackathon_status = get_hackathon_status()
+        status_emoji = {"upcoming": "🔜", "ongoing": "🚀", "ended": "✅", "unknown": "❓"}
+        
         sections.insert(0, "=== HACKATHON OVERVIEW ===")
         sections.insert(1, f"Name: {hackathon_data.get('name')}")
-        sections.insert(2, f"Tagline: {hackathon_data.get('tagline')}")
-        sections.insert(3, f"About: {hackathon_data.get('about')}")
-        sections.insert(4, f"Organizer: {hackathon_data.get('organizer_name')}")
-        sections.insert(5, f"Mode: {hackathon_data.get('mode')}")
-        sections.insert(6, f"Duration: {hackathon_data.get('start_datetime')} to {hackathon_data.get('end_datetime')}")
-        sections.insert(7, f"Total Participants: {hackathon_data.get('total_participants', 0)}")
-        sections.insert(8, "")
+        sections.insert(2, f"Status: {status_emoji.get(hackathon_status, '')} {hackathon_status.upper()}")
+        sections.insert(3, f"Tagline: {hackathon_data.get('tagline')}")
+        sections.insert(4, f"About: {hackathon_data.get('about')}")
+        sections.insert(5, f"Organizer: {hackathon_data.get('organizer_name')}")
+        sections.insert(6, f"Mode: {hackathon_data.get('mode')}")
+        sections.insert(7, f"Duration: {hackathon_data.get('start_datetime')} to {hackathon_data.get('end_datetime')}")
+        sections.insert(8, f"Total Participants: {hackathon_data.get('total_participants', 0)}")
+        sections.insert(9, "")
     
     return "\n".join(sections)
 

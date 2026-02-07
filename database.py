@@ -17,7 +17,16 @@ class HackathonDatabase:
             hackathon = self.collection.find_one({"_id": hackathon_id})
             return hackathon
         except Exception as e:
-            print(f"Error fetching hackathon: {e}")
+            print(f"Error fetching hackathon by ID: {e}")
+            return None
+    
+    def get_hackathon_by_slug(self, slug: str) -> Optional[Dict[str, Any]]:
+        """Retrieve hackathon data by slug"""
+        try:
+            hackathon = self.collection.find_one({"slug": slug})
+            return hackathon
+        except Exception as e:
+            print(f"Error fetching hackathon by slug: {e}")
             return None
     
     def insert_hackathon(self, hackathon_data: Dict[str, Any]) -> bool:
@@ -29,6 +38,18 @@ class HackathonDatabase:
             print(f"Error inserting hackathon: {e}")
             return False
     
+    def update_hackathon(self, hackathon_id: str, update_data: Dict[str, Any]) -> bool:
+        """Update existing hackathon data"""
+        try:
+            result = self.collection.update_one(
+                {"_id": hackathon_id},
+                {"$set": update_data}
+            )
+            return result.modified_count > 0
+        except Exception as e:
+            print(f"Error updating hackathon: {e}")
+            return False
+    
     def list_all_hackathons(self) -> list:
         """List all hackathons"""
         try:
@@ -36,6 +57,15 @@ class HackathonDatabase:
         except Exception as e:
             print(f"Error listing hackathons: {e}")
             return []
+    
+    def delete_hackathon(self, hackathon_id: str) -> bool:
+        """Delete a hackathon by ID"""
+        try:
+            result = self.collection.delete_one({"_id": hackathon_id})
+            return result.deleted_count > 0
+        except Exception as e:
+            print(f"Error deleting hackathon: {e}")
+            return False
 
 # Singleton instance
 db = HackathonDatabase()

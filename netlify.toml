@@ -1,0 +1,20 @@
+[build]
+  base = ""
+  publish = "."
+  command = "echo 'No build needed - static HTML'"
+
+[build.processing]
+  skip_processing = false
+
+[build.environment]
+  # Explicitly disable Python detection
+  PYTHON_VERSION = ""
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Ignore Python files
+[build.ignore]
+  command = "true"

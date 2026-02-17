@@ -12,11 +12,11 @@ load_dotenv()
 
 app = FastAPI(
     title="Hackathon Support Chatbot API",
-    description="AI-powered chatbot using Groq (FREE)",
+    description="AI-powered chatbot for hackathon support using Groq",
     version="1.0.0"
 )
 
-# CORS Configuration
+# CORS Configuration - Allow all origins for development
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -31,10 +31,10 @@ groq_client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 # Request/Response Models
 class ChatRequest(BaseModel):
     question: str
-    hackathon_id: str  # Required, no more optional
+    hackathon_id: str
 
 class ChatResponse(BaseModel):
-    answer: str  # Now contains proper markdown
+    answer: str
     confidence: str
     timestamp: str
 
@@ -68,14 +68,6 @@ The hackathon has four problem statements:
 - Create a secure payment platform  
 - Features: Multi-platform support, real-time tracking
 
-**3. Health Monitoring System** (Healthtech)
-- Develop a health tracking solution
-- Features: Real-time data, AI insights, wearable integration
-
-**4. Green Energy Management** (Sustainability)
-- Build an energy optimization solution
-- Features: Energy tracking, renewable optimization
-
 For short answers (1-2 items), write naturally without formatting.
 For 3+ items, ALWAYS use the numbered format above.
 Use proper markdown with ** for bold.
@@ -84,47 +76,12 @@ Add blank lines between sections for readability.
 Your goal is to provide reliable, official answers that render beautifully in markdown."""
 
 def extract_relevant_sections(hackathon_data: Dict[str, Any], question: str) -> str:
-    """Extract relevant sections from hackathon data based on question keywords.
-    Returns comprehensive context to ensure AI has enough information."""
-    from datetime import datetime, timezone
-    
+    """Extract relevant sections from hackathon data based on question keywords."""
     question_lower = question.lower()
     sections = []
     matched_categories = []
     
-    # Helper function to check if registration is actually open
-    def is_registration_currently_open():
-        try:
-            reg_phase = next((p for p in hackathon_data.get('phases', []) if p.get('type') == 'registration'), None)
-            if not reg_phase:
-                return hackathon_data.get('is_registration_open', False)
-            
-            now = datetime.now(timezone.utc)
-            start = datetime.fromisoformat(reg_phase.get('start_datetime', '').replace('Z', '+00:00'))
-            end = datetime.fromisoformat(reg_phase.get('end_datetime', '').replace('Z', '+00:00'))
-            
-            return start <= now <= end
-        except:
-            # Fallback to database value if date parsing fails
-            return hackathon_data.get('is_registration_open', False)
-    
-    # Helper function to get hackathon status
-    def get_hackathon_status():
-        try:
-            now = datetime.now(timezone.utc)
-            start = datetime.fromisoformat(hackathon_data.get('start_datetime', '').replace('Z', '+00:00'))
-            end = datetime.fromisoformat(hackathon_data.get('end_datetime', '').replace('Z', '+00:00'))
-            
-            if now < start:
-                return "upcoming"
-            elif now > end:
-                return "ended"
-            else:
-                return "ongoing"
-        except:
-            return "unknown"
-    
-    # Registration-related keywords (expanded)
+    # Registration-related
     registration_keywords = ['register', 'registration', 'sign up', 'join', 'participate', 'enroll', 'apply']
     if any(word in question_lower for word in registration_keywords):
         matched_categories.append('registration')
@@ -132,21 +89,17 @@ def extract_relevant_sections(hackathon_data: Dict[str, Any], question: str) -> 
         if reg_phase:
             sections.append("=== REGISTRATION INFORMATION ===")
             sections.append(f"Registration Period: {reg_phase.get('start_datetime')} to {reg_phase.get('end_datetime')}")
-            
-            # Real-time status
-            is_open = is_registration_currently_open()
-            sections.append(f"Current Status: {'✅ OPEN - You can register now!' if is_open else '❌ CLOSED - Registration has ended'}")
+            sections.append(f"Registration Status: {'Open' if hackathon_data.get('is_registration_open') else 'Closed'}")
             sections.append(f"Description: {reg_phase.get('description', 'Registration period for the hackathon')}")
             
-            # Add registration questions if available
             if hackathon_data.get('registration_questions'):
                 sections.append("\nRegistration Questions Required:")
                 for q in hackathon_data['registration_questions']:
                     req_text = "Required" if q.get('required') else "Optional"
                     sections.append(f"  - {q.get('label')} ({q.get('type')}) - {req_text}")
     
-    # Team-related keywords (expanded)
-    team_keywords = ['team', 'size', 'member', 'solo', 'group', 'individual', 'alone', 'partner', 'collaborate']
+    # Team-related
+    team_keywords = ['team', 'size', 'member', 'solo', 'group', 'individual', 'alone', 'partner']
     if any(word in question_lower for word in team_keywords):
         matched_categories.append('team')
         sections.append("\n=== TEAM SIZE INFORMATION ===")
@@ -155,13 +108,12 @@ def extract_relevant_sections(hackathon_data: Dict[str, Any], question: str) -> 
         sections.append(f"Minimum team size: {min_size}")
         sections.append(f"Maximum team size: {max_size}")
         
-        # Add interpretation
         if min_size == 1 and max_size == 1:
             sections.append("This is a SOLO hackathon - only individual participation is allowed.")
         elif min_size == 1:
             sections.append(f"Solo participation is allowed. Teams can have up to {max_size} members.")
     
-    # Themes & Problem Statements keywords (expanded)
+    # Themes & Problem Statements
     theme_keywords = ['theme', 'track', 'problem', 'challenge', 'topic', 'category', 'domain', 'statement']
     if any(word in question_lower for word in theme_keywords):
         matched_categories.append('themes')
@@ -173,7 +125,6 @@ def extract_relevant_sections(hackathon_data: Dict[str, Any], question: str) -> 
             sections.append(f"\n{idx}. {theme['name']}")
             sections.append(f"   Description: {theme.get('description', 'No description available')}")
             
-            # Problem statements for this theme
             problem_statements = theme.get('problem_statements', [])
             if problem_statements:
                 sections.append(f"   Problem Statements ({len(problem_statements)}):")
@@ -181,7 +132,7 @@ def extract_relevant_sections(hackathon_data: Dict[str, Any], question: str) -> 
                     sections.append(f"     • {ps['name']}")
                     sections.append(f"       {ps.get('description', '')}")
     
-    # Timeline/Phases keywords (expanded)
+    # Timeline/Phases
     timeline_keywords = ['phase', 'timeline', 'deadline', 'when', 'date', 'schedule', 'duration', 'time', 'start', 'end', 'submission']
     if any(word in question_lower for word in timeline_keywords):
         matched_categories.append('timeline')
@@ -198,20 +149,18 @@ def extract_relevant_sections(hackathon_data: Dict[str, Any], question: str) -> 
             if phase.get('description'):
                 sections.append(f"   Description: {phase.get('description')}")
             
-            # Submission requirements
             if phase.get('submission_questions'):
                 sections.append(f"   Submission Requirements:")
                 for sq in phase['submission_questions']:
                     req = "Required" if sq.get('required') else "Optional"
                     sections.append(f"     - {sq.get('label')} (Type: {sq.get('type')}) - {req}")
             
-            # Elimination info
             if phase.get('is_elimination_round'):
                 sections.append(f"   ⚠️ This is an ELIMINATION ROUND")
             
             sections.append(f"   Evaluator: {phase.get('evaluator', 'Not specified')}")
     
-    # Evaluation/Judging keywords (expanded)
+    # Evaluation/Judging
     eval_keywords = ['judg', 'evaluat', 'criteria', 'score', 'point', 'metric', 'assess', 'grade', 'marking']
     if any(word in question_lower for word in eval_keywords):
         matched_categories.append('evaluation')
@@ -232,7 +181,7 @@ def extract_relevant_sections(hackathon_data: Dict[str, Any], question: str) -> 
                             percentage = (points / total_points * 100) if total_points > 0 else 0
                             sections.append(f"  • {criterion}: {points} points ({percentage:.0f}%)")
     
-    # Resources keywords (expanded)
+    # Resources
     resource_keywords = ['resource', 'template', 'material', 'help', 'guide', 'document', 'link', 'tool']
     if any(word in question_lower for word in resource_keywords):
         matched_categories.append('resources')
@@ -244,7 +193,7 @@ def extract_relevant_sections(hackathon_data: Dict[str, Any], question: str) -> 
             sections.append("\n=== AVAILABLE RESOURCES ===")
             sections.append("No specific resources have been provided yet.")
     
-    # Prizes keywords
+    # Prizes
     prize_keywords = ['prize', 'reward', 'win', 'award', 'bounty', 'incentive']
     if any(word in question_lower for word in prize_keywords):
         matched_categories.append('prizes')
@@ -256,7 +205,7 @@ def extract_relevant_sections(hackathon_data: Dict[str, Any], question: str) -> 
         else:
             sections.append("Prize information has not been announced yet.")
     
-    # Events keywords
+    # Events
     event_keywords = ['event', 'workshop', 'session', 'webinar', 'meeting', 'ceremony']
     if any(word in question_lower for word in event_keywords):
         matched_categories.append('events')
@@ -271,7 +220,7 @@ def extract_relevant_sections(hackathon_data: Dict[str, Any], question: str) -> 
         else:
             sections.append("No specific events have been scheduled yet.")
     
-    # Contact/Links keywords
+    # Contact/Links
     contact_keywords = ['contact', 'reach', 'support', 'link', 'social', 'discord', 'slack', 'email']
     if any(word in question_lower for word in contact_keywords):
         matched_categories.append('contact')
@@ -285,7 +234,7 @@ def extract_relevant_sections(hackathon_data: Dict[str, Any], question: str) -> 
         if not has_links:
             sections.append("Contact information will be provided soon.")
     
-    # Mentors keywords (NEW!)
+    # Mentors
     mentor_keywords = ['mentor', 'mentors', 'mentorship', 'guide', 'advisor', 'expert']
     if any(word in question_lower for word in mentor_keywords):
         matched_categories.append('mentors')
@@ -294,7 +243,6 @@ def extract_relevant_sections(hackathon_data: Dict[str, Any], question: str) -> 
         if mentors and len(mentors) > 0:
             sections.append(f"Total mentors: {len(mentors)}")
             for mentor in mentors:
-                # Handle different mentor data structures
                 if isinstance(mentor, dict):
                     name = mentor.get('name', 'Unknown')
                     expertise = mentor.get('expertise', mentor.get('role', 'Mentor'))
@@ -308,7 +256,7 @@ def extract_relevant_sections(hackathon_data: Dict[str, Any], question: str) -> 
         else:
             sections.append("No mentors have been assigned yet.")
     
-    # Judges keywords (NEW!)
+    # Judges
     judge_keywords = ['judge', 'judges', 'judging', 'jury', 'evaluator']
     if any(word in question_lower for word in judge_keywords):
         matched_categories.append('judges')
@@ -330,7 +278,7 @@ def extract_relevant_sections(hackathon_data: Dict[str, Any], question: str) -> 
         else:
             sections.append("Judges will be announced soon.")
     
-    # Partners/Sponsors keywords (NEW!)
+    # Partners/Sponsors
     partner_keywords = ['partner', 'partners', 'sponsor', 'sponsors', 'supporter', 'collaboration']
     if any(word in question_lower for word in partner_keywords):
         matched_categories.append('partners')
@@ -346,7 +294,7 @@ def extract_relevant_sections(hackathon_data: Dict[str, Any], question: str) -> 
         else:
             sections.append("Partner and sponsor information will be announced soon.")
     
-    # FAQ keywords (NEW!)
+    # FAQ
     faq_keywords = ['faq', 'frequently', 'question', 'questions', 'common', 'ask']
     if any(word in question_lower for word in faq_keywords):
         matched_categories.append('faq')
@@ -362,7 +310,7 @@ def extract_relevant_sections(hackathon_data: Dict[str, Any], question: str) -> 
         else:
             sections.append("No FAQs available yet.")
     
-    # Rules keywords (NEW!)
+    # Rules
     rules_keywords = ['rule', 'rules', 'regulation', 'regulations', 'guideline', 'guidelines', 'policy']
     if any(word in question_lower for word in rules_keywords):
         matched_categories.append('rules')
@@ -373,7 +321,7 @@ def extract_relevant_sections(hackathon_data: Dict[str, Any], question: str) -> 
         else:
             sections.append("Detailed rules will be published soon.")
     
-    # Eligibility keywords (NEW!)
+    # Eligibility
     eligibility_keywords = ['eligib', 'can i join', 'can i participate', 'who can', 'requirement', 'qualify']
     if any(word in question_lower for word in eligibility_keywords):
         matched_categories.append('eligibility')
@@ -394,7 +342,7 @@ def extract_relevant_sections(hackathon_data: Dict[str, Any], question: str) -> 
         if gender != 'any':
             sections.append(f"Gender: {gender}")
     
-    # Location/Venue keywords (NEW!)
+    # Location/Venue
     location_keywords = ['location', 'venue', 'where', 'address', 'place']
     if any(word in question_lower for word in location_keywords):
         matched_categories.append('location')
@@ -409,89 +357,17 @@ def extract_relevant_sections(hackathon_data: Dict[str, Any], question: str) -> 
         else:
             sections.append("Venue details will be announced soon.")
     
-    # Announcements keywords (NEW!)
-    announcement_keywords = ['announcement', 'announcements', 'update', 'updates', 'news', 'latest']
-    if any(word in question_lower for word in announcement_keywords):
-        matched_categories.append('announcements')
-        announcements = hackathon_data.get('announcements')
-        sections.append("\n=== ANNOUNCEMENTS ===")
-        if announcements:
-            sections.append(announcements)
-        else:
-            sections.append("No announcements at this time. Check back later for updates.")
-    
-    # Statistics keywords (NEW!)
-    stats_keywords = ['how many', 'participants', 'registered', 'views', 'popular']
-    if any(word in question_lower for word in stats_keywords):
-        matched_categories.append('stats')
-        sections.append("\n=== PARTICIPATION STATISTICS ===")
-        total_participants = hackathon_data.get('total_participants', 0)
-        total_views = hackathon_data.get('total_views', 0)
-        sections.append(f"Total Registered Participants: {total_participants}")
-        sections.append(f"Total Page Views: {total_views}")
-    
-    # Tags/Categories keywords (NEW!)
-    tag_keywords = ['tag', 'tags', 'category', 'categories', 'industry', 'type']
-    if any(word in question_lower for word in tag_keywords):
-        matched_categories.append('tags')
-        tags = hackathon_data.get('tags', [])
-        industry = hackathon_data.get('industry')
-        hackathon_type = hackathon_data.get('type')
-        
-        sections.append("\n=== HACKATHON CATEGORY ===")
-        if hackathon_type:
-            sections.append(f"Type: {hackathon_type.capitalize()}")
-        if industry:
-            sections.append(f"Industry: {industry.capitalize()}")
-        if tags and len(tags) > 0:
-            sections.append(f"Tags: {', '.join(tags)}")
-    
-    # Winners keywords (NEW!)
-    winner_keywords = ['winner', 'winners', 'result', 'results', 'who won']
-    if any(word in question_lower for word in winner_keywords):
-        matched_categories.append('winners')
-        sections.append("\n=== WINNERS ===")
-        is_announced = hackathon_data.get('is_winners_announced', False)
-        if is_announced:
-            sections.append("Winners have been announced!")
-            # You can add more winner details here if available in your data
-        else:
-            sections.append("Winners will be announced after the hackathon concludes.")
-    
-    # Contact details (separate from links) (NEW!)
-    if any(word in question_lower for word in ['email', 'phone', 'call', 'contact number']):
-        matched_categories.append('contact_details')
-        contact_details = hackathon_data.get('contact_details', [])
-        if contact_details and len(contact_details) > 0:
-            sections.append("\n=== CONTACT DETAILS ===")
-            for contact in contact_details:
-                if isinstance(contact, dict):
-                    name = contact.get('name', 'Contact')
-                    email = contact.get('email', '')
-                    phone = contact.get('phone', '')
-                    sections.append(f"\n• {name}")
-                    if email:
-                        sections.append(f"  Email: {email}")
-                    if phone:
-                        sections.append(f"  Phone: {phone}")
-                elif isinstance(contact, str):
-                    sections.append(f"• {contact}")
-    
-    # If no specific category matched OR if question is general, provide overview
-    if not matched_categories or any(word in question_lower for word in ['about', 'overview', 'general', 'info', 'tell me', 'what is', 'status', 'when']):
-        hackathon_status = get_hackathon_status()
-        status_emoji = {"upcoming": "🔜", "ongoing": "🚀", "ended": "✅", "unknown": "❓"}
-        
+    # General info if no specific match
+    if not matched_categories or any(word in question_lower for word in ['about', 'overview', 'general', 'info', 'tell me', 'what is']):
         sections.insert(0, "=== HACKATHON OVERVIEW ===")
         sections.insert(1, f"Name: {hackathon_data.get('name')}")
-        sections.insert(2, f"Status: {status_emoji.get(hackathon_status, '')} {hackathon_status.upper()}")
-        sections.insert(3, f"Tagline: {hackathon_data.get('tagline')}")
-        sections.insert(4, f"About: {hackathon_data.get('about')}")
-        sections.insert(5, f"Organizer: {hackathon_data.get('organizer_name')}")
-        sections.insert(6, f"Mode: {hackathon_data.get('mode')}")
-        sections.insert(7, f"Duration: {hackathon_data.get('start_datetime')} to {hackathon_data.get('end_datetime')}")
-        sections.insert(8, f"Total Participants: {hackathon_data.get('total_participants', 0)}")
-        sections.insert(9, "")
+        sections.insert(2, f"Tagline: {hackathon_data.get('tagline')}")
+        sections.insert(3, f"About: {hackathon_data.get('about')}")
+        sections.insert(4, f"Organizer: {hackathon_data.get('organizer_name')}")
+        sections.insert(5, f"Mode: {hackathon_data.get('mode')}")
+        sections.insert(6, f"Duration: {hackathon_data.get('start_datetime')} to {hackathon_data.get('end_datetime')}")
+        sections.insert(7, f"Total Participants: {hackathon_data.get('total_participants', 0)}")
+        sections.insert(8, "")
     
     return "\n".join(sections)
 
@@ -499,14 +375,14 @@ def extract_relevant_sections(hackathon_data: Dict[str, Any], question: str) -> 
 async def chat(request: ChatRequest):
     """Main chat endpoint - processes user questions"""
     try:
-        # Get hackathon data
-        if not request.hackathon_id:
-            raise HTTPException(status_code=400, detail="hackathon_id is required")
-        
+        # Get hackathon data by ID
         hackathon_data = db.get_hackathon_by_id(request.hackathon_id)
         
         if not hackathon_data:
-            raise HTTPException(status_code=404, detail="Hackathon not found")
+            raise HTTPException(
+                status_code=404, 
+                detail=f"Hackathon with ID '{request.hackathon_id}' not found"
+            )
         
         # Extract relevant context
         context = extract_relevant_sections(hackathon_data, request.question)
@@ -519,15 +395,15 @@ User Question: {request.question}
 
 Answer (use proper markdown formatting):"""
         
-        # Call Groq API (GPT-compatible)
+        # Call Groq API
         chat_completion = groq_client.chat.completions.create(
-            model="llama-3.3-70b-versatile",  # FREE and FAST
+            model="llama-3.3-70b-versatile",
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": user_prompt}
             ],
             temperature=0.3,
-            max_tokens=800  # Increased for better formatted responses
+            max_tokens=800
         )
         
         answer = chat_completion.choices[0].message.content.strip()
@@ -548,56 +424,57 @@ Answer (use proper markdown formatting):"""
 async def import_hackathon(data: HackathonDataRequest):
     """Import a single hackathon data into database"""
     try:
-        # Clean the data before inserting
-        import re
-        
-        def clean_string(text):
-            """Remove invalid control characters"""
-            if not isinstance(text, str):
-                return text
-            # Remove problematic control characters
-            text = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', '', text)
-            return text
-        
-        def clean_data(obj):
-            """Recursively clean all strings"""
-            if isinstance(obj, dict):
-                return {k: clean_data(v) for k, v in obj.items()}
-            elif isinstance(obj, list):
-                return [clean_data(item) for item in obj]
-            elif isinstance(obj, str):
-                return clean_string(obj)
-            else:
-                return obj
-        
-        cleaned_data = clean_data(data.hackathon_data)
-        
-        success = db.insert_hackathon(cleaned_data)
+        success = db.insert_hackathon(data.hackathon_data)
         if success:
             return {
                 "status": "success",
                 "message": "Hackathon data imported successfully",
-                "hackathon_id": cleaned_data.get("_id"),
-                "hackathon_name": cleaned_data.get("name")
+                "hackathon_id": data.hackathon_data.get("_id"),
+                "hackathon_name": data.hackathon_data.get("name")
             }
         raise HTTPException(status_code=500, detail="Failed to import data")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/admin/import-multiple-hackathons")
-async def import_multiple_hackathons(hackathons: List[Dict[str, Any]]):
-    """Import multiple hackathons at once"""
+async def import_multiple_hackathons(data: List[HackathonDataRequest]):
+    """Import multiple hackathons at once - same format as single import"""
     try:
         imported = []
         failed = []
         
-        for hackathon_data in hackathons:
+        for item in data:
             try:
-                success = db.insert_hackathon(hackathon_data)
+                hackathon_data = item.hackathon_data
+                
+                # Clean the data before inserting
+                import re
+                
+                def clean_string(text):
+                    """Remove invalid control characters"""
+                    if not isinstance(text, str):
+                        return text
+                    text = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', '', text)
+                    return text
+                
+                def clean_data(obj):
+                    """Recursively clean all strings"""
+                    if isinstance(obj, dict):
+                        return {k: clean_data(v) for k, v in obj.items()}
+                    elif isinstance(obj, list):
+                        return [clean_data(item) for item in obj]
+                    elif isinstance(obj, str):
+                        return clean_string(obj)
+                    else:
+                        return obj
+                
+                cleaned_data = clean_data(hackathon_data)
+                
+                success = db.insert_hackathon(cleaned_data)
                 if success:
                     imported.append({
-                        "id": hackathon_data.get("_id"),
-                        "name": hackathon_data.get("name")
+                        "id": cleaned_data.get("_id"),
+                        "name": cleaned_data.get("name")
                     })
                 else:
                     failed.append({
@@ -607,8 +484,8 @@ async def import_multiple_hackathons(hackathons: List[Dict[str, Any]]):
                     })
             except Exception as e:
                 failed.append({
-                    "id": hackathon_data.get("_id"),
-                    "name": hackathon_data.get("name"),
+                    "id": hackathon_data.get("_id") if 'hackathon_data' in locals() else "unknown",
+                    "name": hackathon_data.get("name") if 'hackathon_data' in locals() else "unknown",
                     "error": str(e)
                 })
         
@@ -621,10 +498,10 @@ async def import_multiple_hackathons(hackathons: List[Dict[str, Any]]):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
+        
 @app.get("/hackathons")
 async def list_hackathons():
-    """List all hackathons with chatbot support"""
+    """List all available hackathons"""
     try:
         hackathons = db.list_all_hackathons()
         return {
@@ -651,7 +528,6 @@ async def list_hackathons():
 async def get_hackathon_details(identifier: str):
     """Get details of a specific hackathon by ID or slug"""
     try:
-        # Try to fetch by ID first, then by slug
         hackathon = db.get_hackathon_by_id(identifier)
         if not hackathon:
             hackathon = db.get_hackathon_by_slug(identifier)
@@ -659,7 +535,6 @@ async def get_hackathon_details(identifier: str):
         if not hackathon:
             raise HTTPException(status_code=404, detail="Hackathon not found")
         
-        # Return sanitized version (remove internal fields if needed)
         return {
             "id": hackathon.get("_id"),
             "name": hackathon.get("name"),
@@ -690,8 +565,7 @@ async def health_check():
     return {
         "status": "healthy",
         "timestamp": datetime.utcnow().isoformat(),
-        "provider": "Groq",
-        "model": "llama-3.3-70b-versatile"
+        "api_version": "1.0.0"
     }
 
 @app.get("/")

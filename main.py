@@ -52,12 +52,15 @@ STRICTLY using the provided hackathon data.
 Rules you MUST follow:
 1. Use ONLY the information given in the context.
 2. Do NOT assume, guess, or add any information outside the provided data.
-3. If specific information is not found but related information exists, provide what IS available and mention what's missing.
-4. Only say "I'm sorry, I couldn't find this information" if NOTHING relevant to the question is in the context.
+3. When given the CURRENT TIME and DATES, you MUST make definitive statements about status.
+   - If current time is AFTER the end date, say "The hackathon/registration HAS CLOSED"
+   - If current time is BEFORE the start date, say "The hackathon/registration HAS NOT STARTED YET"
+   - If current time is BETWEEN start and end, say "The hackathon/registration IS CURRENTLY OPEN"
+4. NEVER say "assuming the current date" or "we cannot definitively say" - the context includes current time!
 5. Be helpful and provide all relevant information from the context.
 
 CRITICAL FORMATTING RULES - YOU MUST FOLLOW EXACTLY:
-Your response will be displayed in a markdown renderer, so format accordingly:
+Your response will be displayed in a markdown renderer, so format accordingly.
 
 For lists of multiple items, use this EXACT format:
 
@@ -76,23 +79,88 @@ For 3+ items, ALWAYS use the numbered format above.
 Use proper markdown with ** for bold.
 Add blank lines between sections for readability.
 
-Your goal is to provide reliable, official answers that render beautifully in markdown."""
+Your goal is to provide reliable, DEFINITIVE official answers that render beautifully in markdown."""
+"""
+
+---
+
+## 🎯 Example of Improved Response
+
+**Before (Vague):**
+```
+Since the end date is 2026-03-13T09:44:00Z, and assuming the current 
+date is after this, the hackathon would be closed. However, without 
+the current date for comparison, we cannot definitively say...
+```
+
+**After (Definitive):**
+```
+✅ The hackathon CodeCatalyst HAS ENDED.
+
+Current Status: CLOSED
+- Start Date: January 5, 2026 at 9:44 AM UTC
+- End Date: March 13, 2026 at 9:44 AM UTC  
+- Current Date: February 18, 2026 at 3:45 PM UTC
+
+The hackathon is currently running and will end in 23 days.
+
+"""
+from datetime import datetime, timezone
 
 def extract_relevant_sections(hackathon_data: Dict[str, Any], question: str) -> str:
-    """Extract relevant sections from hackathon data based on question keywords."""
+    """Extract relevant sections from hackathon data based on question keywords.
+    Returns comprehensive context to ensure AI has enough information."""
+    
     question_lower = question.lower()
     sections = []
     matched_categories = []
     
-    # Registration-related
-    registration_keywords = ['register', 'registration', 'sign up', 'join', 'participate', 'enroll', 'apply']
+    # Helper function to check if registration is currently open
+    def is_registration_currently_open():
+        try:
+            reg_phase = next((p for p in hackathon_data.get('phases', []) if p.get('type') == 'registration'), None)
+            if not reg_phase:
+                return hackathon_data.get('is_registration_open', False)
+            
+            now = datetime.now(timezone.utc)
+            start = datetime.fromisoformat(reg_phase.get('start_datetime', '').replace('Z', '+00:00'))
+            end = datetime.fromisoformat(reg_phase.get('end_datetime', '').replace('Z', '+00:00'))
+            
+            return start <= now <= end
+        except:
+            # Fallback to database value if date parsing fails
+            return hackathon_data.get('is_registration_open', False)
+    
+    # Helper function to get hackathon status
+    def get_hackathon_status():
+        try:
+            now = datetime.now(timezone.utc)
+            start = datetime.fromisoformat(hackathon_data.get('start_datetime', '').replace('Z', '+00:00'))
+            end = datetime.fromisoformat(hackathon_data.get('end_datetime', '').replace('Z', '+00:00'))
+            
+            if now < start:
+                return "upcoming", f"Starts in {(start - now).days} days"
+            elif now > end:
+                return "ended", f"Ended {(now - end).days} days ago"
+            else:
+                return "ongoing", f"Ends in {(end - now).days} days"
+        except:
+            return "unknown", "Status unavailable"
+    
+    # Registration-related keywords
+    registration_keywords = ['register', 'registration', 'sign up', 'join', 'participate', 'enroll', 'apply', 'closed', 'open']
     if any(word in question_lower for word in registration_keywords):
         matched_categories.append('registration')
         reg_phase = next((p for p in hackathon_data.get('phases', []) if p.get('type') == 'registration'), None)
         if reg_phase:
             sections.append("=== REGISTRATION INFORMATION ===")
             sections.append(f"Registration Period: {reg_phase.get('start_datetime')} to {reg_phase.get('end_datetime')}")
-            sections.append(f"Registration Status: {'Open' if hackathon_data.get('is_registration_open') else 'Closed'}")
+            
+            # Real-time status - VERY IMPORTANT
+            is_open = is_registration_currently_open()
+            current_time = datetime.now(timezone.utc).isoformat()
+            sections.append(f"\nCurrent Time: {current_time}")
+            sections.append(f"Current Status: {'✅ REGISTRATION IS OPEN - You can register now!' if is_open else '❌ REGISTRATION IS CLOSED - Registration period has ended'}")
             sections.append(f"Description: {reg_phase.get('description', 'Registration period for the hackathon')}")
             
             if hackathon_data.get('registration_questions'):
@@ -100,6 +168,27 @@ def extract_relevant_sections(hackathon_data: Dict[str, Any], question: str) -> 
                 for q in hackathon_data['registration_questions']:
                     req_text = "Required" if q.get('required') else "Optional"
                     sections.append(f"  - {q.get('label')} ({q.get('type')}) - {req_text}")
+    
+    # Check hackathon status if asked about "closed", "ended", "finished"
+    status_keywords = ['closed', 'ended', 'finished', 'over', 'status', 'ongoing', 'running']
+    if any(word in question_lower for word in status_keywords):
+        if 'registration' not in matched_categories:  # Don't duplicate if already covered
+            matched_categories.append('status')
+            status, status_detail = get_hackathon_status()
+            sections.append("\n=== HACKATHON STATUS ===")
+            sections.append(f"Current Time: {datetime.now(timezone.utc).isoformat()}")
+            sections.append(f"Hackathon Period: {hackathon_data.get('start_datetime')} to {hackathon_data.get('end_datetime')}")
+            
+            if status == "upcoming":
+                sections.append(f"Status: 🔜 UPCOMING - {status_detail}")
+            elif status == "ongoing":
+                sections.append(f"Status: 🚀 CURRENTLY RUNNING - {status_detail}")
+            elif status == "ended":
+                sections.append(f"Status: ✅ ENDED - {status_detail}")
+            else:
+                sections.append(f"Status: ❓ {status}")
+    
+    # ... rest of your extract_relevant_sections function stays the same ...
     
     # Team-related
     team_keywords = ['team', 'size', 'member', 'solo', 'group', 'individual', 'alone', 'partner']

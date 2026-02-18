@@ -7,6 +7,7 @@ import os
 from datetime import datetime
 from dotenv import load_dotenv
 from database import db
+from typing import Optional, Dict, Any, List
 
 load_dotenv()
 
@@ -32,11 +33,13 @@ groq_client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 class ChatRequest(BaseModel):
     question: str
     hackathon_id: str
+    conversation_history: Optional[List[Dict[str, str]]] = []
 
 class ChatResponse(BaseModel):
     answer: str
     confidence: str
     timestamp: str
+    conversation_history: List[Dict[str, str]]
 
 class HackathonDataRequest(BaseModel):
     hackathon_data: Dict[str, Any]
@@ -373,7 +376,7 @@ def extract_relevant_sections(hackathon_data: Dict[str, Any], question: str) -> 
 
 @app.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
-    """Main chat endpoint - processes user questions"""
+    """Main chat endpoint - processes user questions with conversation context"""
     try:
         # Get hackathon data by ID
         hackathon_data = db.get_hackathon_by_id(request.hackathon_id)
@@ -384,24 +387,41 @@ async def chat(request: ChatRequest):
                 detail=f"Hackathon with ID '{request.hackathon_id}' not found"
             )
         
-        # Extract relevant context
+        # Extract relevant context from hackathon data
         context = extract_relevant_sections(hackathon_data, request.question)
         
-        # Build prompt
-        user_prompt = f"""Context:
+        # Build conversation messages for Groq API
+        messages = [
+            {"role": "system", "content": SYSTEM_PROMPT}
+        ]
+        
+        # Add conversation history (last 5 exchanges to keep context manageable)
+        if request.conversation_history:
+            # Take only last 5 exchanges (10 messages)
+            recent_history = request.conversation_history[-10:]
+            for msg in recent_history:
+                messages.append({
+                    "role": msg.get("role", "user"),
+                    "content": msg.get("content", "")
+                })
+        
+        # Add current user question with hackathon context
+        user_prompt = f"""Context about the hackathon:
 {context}
 
 User Question: {request.question}
 
 Answer (use proper markdown formatting):"""
         
-        # Call Groq API
+        messages.append({
+            "role": "user",
+            "content": user_prompt
+        })
+        
+        # Call Groq API with conversation history
         chat_completion = groq_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": user_prompt}
-            ],
+            messages=messages,
             temperature=0.3,
             max_tokens=800
         )
@@ -409,10 +429,20 @@ Answer (use proper markdown formatting):"""
         answer = chat_completion.choices[0].message.content.strip()
         confidence = "low" if "couldn't find" in answer.lower() else "high"
         
+        # Update conversation history
+        updated_history = request.conversation_history.copy() if request.conversation_history else []
+        updated_history.append({"role": "user", "content": request.question})
+        updated_history.append({"role": "assistant", "content": answer})
+        
+        # Keep only last 10 messages (5 exchanges) to prevent context overflow
+        if len(updated_history) > 10:
+            updated_history = updated_history[-10:]
+        
         return ChatResponse(
             answer=answer,
             confidence=confidence,
-            timestamp=datetime.utcnow().isoformat()
+            timestamp=datetime.utcnow().isoformat(),
+            conversation_history=updated_history
         )
         
     except HTTPException:
@@ -498,6 +528,8 @@ async def import_multiple_hackathons(data: List[HackathonDataRequest]):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
         
 @app.get("/hackathons")
 async def list_hackathons():

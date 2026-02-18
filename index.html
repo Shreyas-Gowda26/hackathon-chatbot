@@ -463,7 +463,7 @@
         const API_BASE_URL = 'https://hackculture-chatbot.onrender.com';
         
         let currentHackathonId = null;
-        let messageHistory = [];
+        let conversationHistory = [];  // NEW: Track conversation history
 
         // Elements
         const hackathonSelect = document.getElementById('hackathon-select');
@@ -500,10 +500,12 @@
                 chatInput.disabled = false;
                 sendBtn.disabled = false;
                 chatMessages.innerHTML = '';
+                conversationHistory = [];  // NEW: Reset conversation history
                 addBotMessage("Hi! I'm your AI assistant. Ask me anything about this hackathon! 🚀");
             } else {
                 chatInput.disabled = true;
                 sendBtn.disabled = true;
+                conversationHistory = [];  // NEW: Reset conversation history
                 chatMessages.innerHTML = `
                     <div class="welcome-message">
                         <h2>👋 Welcome!</h2>
@@ -532,7 +534,8 @@
                     },
                     body: JSON.stringify({
                         question: question,
-                        hackathon_id: currentHackathonId
+                        hackathon_id: currentHackathonId,
+                        conversation_history: conversationHistory  // NEW: Send conversation history
                     })
                 });
 
@@ -545,6 +548,10 @@
                 }
 
                 const data = await response.json();
+                
+                // NEW: Update conversation history from response
+                conversationHistory = data.conversation_history || [];
+                
                 addBotMessage(data.answer, data.confidence);
 
             } catch (error) {

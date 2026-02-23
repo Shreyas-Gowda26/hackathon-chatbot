@@ -1,7 +1,30 @@
-name: Install Keploy CLI
-    run: |
-      curl --silent -L https://keploy.io/ent/install.sh | bash
-      
-name: Run Keploy Test Suite
-    run: |
-      export KEPLOY_API_KEY=McJjkRzMHcTtdr012w== && keploy test-suite --app=35ce2a0e-f545-484a-a7e2-ccc8163c7a2f --base-path https://hackculture-chatbot.onrender.com --cloud
+name: Keploy API Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  keploy-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Install Keploy CLI
+        run: |
+          curl --silent -L https://keploy.io/ent/install.sh | bash
+
+      - name: Run Keploy Test Suite
+        env:
+          KEPLOY_API_KEY: McJjkRzMHcTtdr012w==
+        run: |
+          keploy test-suite \
+            --app=35ce2a0e-f545-484a-a7e2-ccc8163c7a2f \
+            --base-path https://hackculture-chatbot.onrender.com \
+            --cloud
